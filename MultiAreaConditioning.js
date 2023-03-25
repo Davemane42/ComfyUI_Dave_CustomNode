@@ -7,7 +7,7 @@ function CUSTOM_INT(node, inputName, val, func, config = {}) {
 			inputName,
 			val,
 			func,
-			Object.assign({}, { min: 0, max: 2048, step: 10, precision: 0 }, config)
+			Object.assign({}, { min: 0, max: 2048, step: 640, precision: 0 }, config)
 		),
 	};
 }
@@ -183,8 +183,8 @@ app.registerExtension({
 
                 this.serialize_widgets = true;
 
-				CUSTOM_INT(this, "width", 512, function (v, _, node) {node.properties["width"] = v})
-				CUSTOM_INT(this, "height", 512, function (v, _, node) {node.properties["height"] = v})
+				CUSTOM_INT(this, "width", 512, function (v, _, node) {const s = this.options.step / 10; this.value = Math.round(v / s) * s; node.properties["width"] = this.value})
+				CUSTOM_INT(this, "height", 512, function (v, _, node) {const s = this.options.step / 10; this.value = Math.round(v / s) * s; node.properties["height"] = this.value})
                 
 				addCanvas(this, app)
 
@@ -201,14 +201,14 @@ app.registerExtension({
 						node.widgets[6].value = values[v][2]
 						node.widgets[7].value = values[v][3]
 					},
-					{ max: 7 }
+					{ step: 10, max: 7 }
 
 				)
 				
-				CUSTOM_INT(this, "x", 0, function (v, _, node) {node.properties["values"][node.widgets[3].value][0] = v})
-				CUSTOM_INT(this, "y", 0, function (v, _, node) {node.properties["values"][node.widgets[3].value][1] = v})
-				CUSTOM_INT(this, "width", 256, function (v, _, node) {node.properties["values"][node.widgets[3].value][2] = v})
-				CUSTOM_INT(this, "height", 256, function (v, _, node) {node.properties["values"][node.widgets[3].value][3] = v})
+				CUSTOM_INT(this, "x", 0, function (v, _, node) {const s = this.options.step / 10; this.value = Math.round(v / s) * s; node.properties["values"][node.widgets[3].value][0] = this.value})
+				CUSTOM_INT(this, "y", 0, function (v, _, node) {const s = this.options.step / 10; this.value = Math.round(v / s) * s; node.properties["values"][node.widgets[3].value][1] = this.value})
+				CUSTOM_INT(this, "width", 256, function (v, _, node) {const s = this.options.step / 10; this.value = Math.round(v / s) * s; node.properties["values"][node.widgets[3].value][2] = this.value})
+				CUSTOM_INT(this, "height", 256, function (v, _, node) {const s = this.options.step / 10; this.value = Math.round(v / s) * s; node.properties["values"][node.widgets[3].value][3] = this.value})
 
 				return r;
 			};

@@ -65,31 +65,43 @@ function addCanvas(node, app) {
 		type: "customCanvas",
 		name: "name",
 		get value() {
-			//return this.inputEl.value;
+			return this.canvas.value;
 		},
 		set value(x) {
-			//this.inputEl.value = x;
+			this.canvas.value = x;
 		},
 		draw: function (ctx, node, widgetWidth, widgetY) {
-			if (!this.parent.inputHeight) {
+			if (!node.inputHeight) {
 				// If we are initially offscreen when created we wont have received a resize event
 				// Calculate it here instead
 				computeSize(node.size);
 			}
 
-			const visible = true //app.canvasblank.ds.scale > 0.5 && this.type === "customCanvas";
+			const visible = true//app.canvasblank.ds.scale > 0.5 && this.type === "customCanvas";
+			const t = ctx.getTransform();
+			const margin = 10
+			const border = 2
+
+			const widgetHeight = node.inputHeight
+            const values = node.properties["values"]
+			const width = node.properties["width"]
+			const height = node.properties["height"]
+
+			const scale = Math.min((widgetWidth-margin*2)/width, (widgetHeight-margin*2)/height)
+
+			const index = node.widgets[3].value
+
+			Object.assign(this.canvas.style, {
+				left: `${t.e}px`,
+				top: `${t.f + (widgetY*t.d)}px`,
+				width: `${widgetWidth * t.a}px`,
+				height: `${widgetHeight * t.d}px`,
+				position: "absolute",
+				zIndex: 1,
+				fontSize: `${t.d * 10.0}px`,
+			});
+
 			this.canvas.hidden = !visible;
-
-			
-			const colors = ["rgba(255,0,0,0.5)", "rgba(0,255,0,0.5)", "rgba(0,0,255,0.5)", "rgba(255,255,0,0.5)", "rgba(255,0,255,0.5)", "rgba(0,255,255,0.5)", "rgba(255,0,0,0.5)", "rgba(0,255,0,0.5)"]
-            const margin = 10
-
-            const widgetHeight = this.parent.inputHeight
-            const values = this.parent.properties["values"]
-			const width = this.parent.properties["width"]
-			const height = this.parent.properties["height"]
-
-            const scale = Math.min((widgetWidth-margin*2)/width, (widgetHeight-margin*2)/height)
 
             let backgroudWidth = width * scale
             let backgroundHeight = height * scale
@@ -106,13 +118,13 @@ function addCanvas(node, app) {
 			let widgetX = xOffset
 			widgetY = widgetY + yOffset
 
-			ctx.fillStyle = "#FFFFFF";
+			ctx.fillStyle = "#000000"
+			ctx.fillRect(widgetX-border, widgetY-border, backgroudWidth+border*2, backgroundHeight+border*2)
+
+			ctx.fillStyle = globalThis.LiteGraph.NODE_DEFAULT_BGCOLOR
 			ctx.fillRect(widgetX, widgetY, backgroudWidth, backgroundHeight);
 
-			for (const [k, v] of values.entries()) {
-
-				if (node.inputs[k].link === null) {continue;}
-				
+			function getDrawArea(v) {
 				let x = v[0]*backgroudWidth/width
 				let y = v[1]*backgroundHeight/height
 				let w = v[2]*backgroudWidth/width
@@ -126,14 +138,80 @@ function addCanvas(node, app) {
 					h = Math.max(0, backgroundHeight-y)
 				}
 
-				ctx.fillStyle = colors[k];
-				ctx.fillRect(widgetX+x, widgetY+y, w, h);
+				return [x, y, w, h]
 			}
+
+			function getDrawColor(percent, alpha) {
+				let h = 360*percent
+				let s = 50;
+				let l = 50;
+				l /= 100;
+				const a = s * Math.min(l, 1 - l) / 100;
+				const f = n => {
+					const k = (n + h / 30) % 12;
+					const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+					return Math.round(255 * color).toString(16).padStart(2, '0');   // convert to Hex and prefix "0" if needed
+				};
+				return `#${f(0)}${f(8)}${f(4)}${alpha}`;
+			}
+            
+			// Draw all the conditioning zones
+			for (const [k, v] of values.entries()) {
+
+				if (k == index) {continue}
+
+				const [x, y, w, h] = getDrawArea(v)
+
+				ctx.fillStyle = getDrawColor(k/values.length, "80") //colors[k] + "B0"
+				ctx.fillRect(widgetX+x, widgetY+y, w, h)
+
+			}
+
+			ctx.beginPath();
+			ctx.lineWidth = 1;
+
+			for (let x = 0; x <= width/64; x += 1) {
+				ctx.moveTo(widgetX+x*64*scale, widgetY);
+				ctx.lineTo(widgetX+x*64*scale, widgetY+backgroundHeight);
+			}
+
+			for (let y = 0; y <= height/64; y += 1) {
+				ctx.moveTo(widgetX, widgetY+y*64*scale);
+				ctx.lineTo(widgetX+backgroudWidth, widgetY+y*64*scale);
+			}
+
+			ctx.strokeStyle = "#00000050";
+			ctx.stroke();
+			ctx.closePath();
+
+			// Draw currently selected zone
+			let [x, y, w, h] = getDrawArea(values[index])
+
+			w = Math.max(16, w)
+			h = Math.max(16, h)
+
+			//ctx.fillStyle = "#"+(Number(`0x1${colors[index].substring(1)}`) ^ 0xFFFFFF).toString(16).substring(1).toUpperCase()
+			ctx.fillStyle = "#ffffff"
+			ctx.fillRect(widgetX+x, widgetY+y, w, h)
+
+			ctx.fillStyle = getDrawColor(index/values.length, "FF")//colors[index] + "FF"
+			ctx.fillRect(widgetX+x+border, widgetY+y+border, w-border*2, h-border*2)
+
 		},
 	};
 
 	widget.canvas = document.createElement("canvas");
 	widget.canvas.className = "dave-custom-canvas";
+
+	// widget.canvas.addEventListener("click", function(e) {
+	// 	console.log("click", e)
+	// });
+	// widget.canvas.addEventListener("mouseenter", function(e) {
+	// 	console.log("mouseenter", e)
+	// });
+	// widget.canvas.addEventListener("mouseleave", function(e) {
+	// 	console.log("mouseleave", e)
+	// });
 
 	widget.parent = node;
 	document.body.appendChild(widget.canvas);
@@ -191,7 +269,7 @@ app.registerExtension({
 
 				this.setProperty("values", [])
 				for (let i = 0; i < 8; i++) {
-					this.properties["values"].push([0, 0, 256, 256])
+					this.properties["values"].push([0, 0, 0, 0])
 				}
 
                 this.serialize_widgets = true;

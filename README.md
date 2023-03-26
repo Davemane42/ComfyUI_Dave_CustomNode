@@ -2,7 +2,8 @@
 
 # MultiAreaConditioning
 
-let you visualize the default ConditioningSetArea node  
+Let you visualize the default ConditioningSetArea node  
+If width/height are left at 0, nothing will be outputed from that area  
 <img src="./images/MultiAreaConditioning_node.png" width="500px">
 
 this also come with a <strong>ConditioningUpscale</strong> node.  

@@ -10,7 +10,7 @@ class MultiAreaConditioning:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "conditioning": ("CONDITIONING", )
+                "conditioning0": ("CONDITIONING", )
             },
             "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"},
         }
@@ -126,5 +126,5 @@ class ConditioningDebug():
 NODE_CLASS_MAPPINGS = {
     "MultiAreaConditioning": MultiAreaConditioning,
     "ConditioningUpscale": ConditioningUpscale,
-    #"ConditioningDebug": ConditioningDebug,
+    "ConditioningDebug": ConditioningDebug,
 }

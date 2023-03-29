@@ -291,7 +291,9 @@ function transformFunc(widget, value, node, index) {
 	const s = widget.options.step / 10;
 	widget.value = Math.round(value / s) * s;
 	node.properties["values"][node.widgets[3].value][index] = widget.value
-	node.widgets_values[2] = node.properties["values"].join()
+	if (node.widgets_values) { 
+		node.widgets_values[2] = node.properties["values"].join()
+	}
 }
 
 app.registerExtension({
@@ -355,6 +357,10 @@ app.registerExtension({
 					}
 				
 					this.onResize(this.size)
+
+					for (let i in this.inputs) {
+						this.inputs[i].name = "conditioning" + i
+					}
 				}
 
 				this.getExtraMenuOptions = function(_, options) {
@@ -364,10 +370,11 @@ app.registerExtension({
 							callback: () => {
 								this.properties["values"].push([0, 0, 0, 0])
 
+								const index = this.inputs.length
 								
-								this.addInput("conditioning", "CONDITIONING")
+								this.addInput("conditioning"+index, "CONDITIONING")
 
-								this.widgets[3].options.max = this.inputs.length-1
+								this.widgets[3].options.max = index
 								
 								this.onResize(this.size)
 							},

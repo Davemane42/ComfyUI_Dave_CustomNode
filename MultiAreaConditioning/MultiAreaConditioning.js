@@ -12,40 +12,55 @@ function CUSTOM_INT(node, inputName, val, func, config = {}) {
 	};
 }
 
+function recursiveLinkUpstream(node, index=0) {
+	const link = node.inputs[index].link
+	if (link) {
+		const nodeID = node.graph.links[link].origin_id
+		const connectedNode = node.graph._nodes_by_id[nodeID]
+
+		if (connectedNode.type === "Reroute") {
+			return recursiveLinkUpstream(connectedNode)
+		} else {
+			return connectedNode
+		}
+	} else {
+		return node
+	}
+}
+
 function addCanvas(node, app) {
-	const MIN_SIZE = 100;
 
-	function computeSize(size) {
+	function computeCanvasSize(node, size) {
 		if (node.widgets[0].last_y == null) return;
-
-		let y = node.widgets[0].last_y;
+	
+		const MIN_SIZE = 200;
+	
+		let y = LiteGraph.NODE_WIDGET_HEIGHT * node.inputs.length + 5;
 		let freeSpace = size[1] - y;
-
+	
 		// Compute the height of all non customtext widgets
 		let widgetHeight = 0;
 		for (let i = 0; i < node.widgets.length; i++) {
 			const w = node.widgets[i];
-			if (w.type === "customCanvas") {
-
-			} else {
+			if (w.type !== "customCanvas") {
 				if (w.computeSize) {
 					widgetHeight += w.computeSize()[1] + 4;
 				} else {
-					widgetHeight += LiteGraph.NODE_WIDGET_HEIGHT + 4;
+					widgetHeight += LiteGraph.NODE_WIDGET_HEIGHT + 5;
 				}
 			}
 		}
-
-		// See how large each text input can be
+	
+		// See how large the canvas can be
 		freeSpace -= widgetHeight;
 
+		// There isnt enough space for all the widgets, increase the size of the node
 		if (freeSpace < MIN_SIZE) {
-			// There isnt enough space for all the widgets, increase the size of the node
 			freeSpace = MIN_SIZE;
 			node.size[1] = y + widgetHeight + freeSpace;
 			node.graph.setDirtyCanvas(true);
 		}
-
+	
 		// Position each of the widgets
 		for (const w of node.widgets) {
 			w.y = y;
@@ -57,8 +72,8 @@ function addCanvas(node, app) {
 				y += LiteGraph.NODE_WIDGET_HEIGHT + 4;
 			}
 		}
-
-		node.inputHeight = freeSpace;
+	
+		node.canvasHeight = freeSpace;
 	}
 
 	const widget = {
@@ -71,18 +86,19 @@ function addCanvas(node, app) {
 			this.canvas.value = x;
 		},
 		draw: function (ctx, node, widgetWidth, widgetY) {
-			if (!node.inputHeight) {
-				// If we are initially offscreen when created we wont have received a resize event
-				// Calculate it here instead
-				computeSize(node.size);
+			
+			// If we are initially offscreen when created we wont have received a resize event
+			// Calculate it here instead
+			if (!node.canvasHeight) {
+				computeCanvasSize(node, node.size)
 			}
 
-			const visible = true//app.canvasblank.ds.scale > 0.5 && this.type === "customCanvas";
+			const visible = true //app.canvasblank.ds.scale > 0.5 && this.type === "customCanvas";
 			const t = ctx.getTransform();
 			const margin = 10
 			const border = 2
 
-			const widgetHeight = node.inputHeight
+			const widgetHeight = node.canvasHeight
             const values = node.properties["values"]
 			const width = node.properties["width"]
 			const height = node.properties["height"]
@@ -99,6 +115,7 @@ function addCanvas(node, app) {
 				position: "absolute",
 				zIndex: 1,
 				fontSize: `${t.d * 10.0}px`,
+				pointerEvents: "none",
 			});
 
 			this.canvas.hidden = !visible;
@@ -187,15 +204,42 @@ function addCanvas(node, app) {
 			// Draw currently selected zone
 			let [x, y, w, h] = getDrawArea(values[index])
 
-			w = Math.max(16, w)
-			h = Math.max(16, h)
+			w = Math.max(32*scale, w)
+			h = Math.max(32*scale, h)
 
 			//ctx.fillStyle = "#"+(Number(`0x1${colors[index].substring(1)}`) ^ 0xFFFFFF).toString(16).substring(1).toUpperCase()
 			ctx.fillStyle = "#ffffff"
 			ctx.fillRect(widgetX+x, widgetY+y, w, h)
 
-			ctx.fillStyle = getDrawColor(index/values.length, "FF")//colors[index] + "FF"
+			const selectedColor = getDrawColor(index/values.length, "FF")
+			ctx.fillStyle = selectedColor
 			ctx.fillRect(widgetX+x+border, widgetY+y+border, w-border*2, h-border*2)
+
+			// Display
+			ctx.beginPath();
+
+			ctx.arc(LiteGraph.NODE_SLOT_HEIGHT*0.5, LiteGraph.NODE_SLOT_HEIGHT*(index + 0.5)+4, 4, 0, Math.PI * 2);
+			ctx.fill();
+
+			ctx.lineWidth = 1;
+			ctx.strokeStyle = "white";
+			ctx.stroke();
+
+			if (node.selected) {
+				const connectedNode = recursiveLinkUpstream(node, index)
+				if (connectedNode) {
+
+					const [x, y] = connectedNode.pos
+					const [w, h] = connectedNode.size
+					const offset = 5
+
+					ctx.strokeStyle = selectedColor
+					ctx.lineWidth = 5;
+					ctx.strokeRect(x-offset-node.pos[0], y-offset-node.pos[1]-LiteGraph.NODE_TITLE_HEIGHT, w+offset*2, h+offset*2+LiteGraph.NODE_TITLE_HEIGHT)
+				}
+			}
+			ctx.lineWidth = 1;
+			ctx.closePath();
 
 		},
 	};
@@ -203,6 +247,7 @@ function addCanvas(node, app) {
 	widget.canvas = document.createElement("canvas");
 	widget.canvas.className = "dave-custom-canvas";
 
+	// Mouse event... could be usefull
 	// widget.canvas.addEventListener("click", function(e) {
 	// 	console.log("click", e)
 	// });
@@ -234,26 +279,19 @@ function addCanvas(node, app) {
 		}
 	};
 
-	node.onRemoved = function () {
-		// When removing this node we need to remove the input from the DOM
-		for (let y in this.widgets) {
-			if (this.widgets[y].canvas) {
-				this.widgets[y].canvas.remove();
-			}
-		}
-	};
-
 	node.onResize = function (size) {
-		computeSize(size);
+		computeCanvasSize(node, size);
 	}
 
 	return { minWidth: 200, minHeight: 200, widget }
 }
 
+
 function transformFunc(widget, value, node, index) {
 	const s = widget.options.step / 10;
 	widget.value = Math.round(value / s) * s;
 	node.properties["values"][node.widgets[3].value][index] = widget.value
+	node.widgets_values[2] = node.properties["values"].join()
 }
 
 app.registerExtension({
@@ -267,10 +305,9 @@ app.registerExtension({
 				this.setProperty("width", 512)
 				this.setProperty("height", 512)
 
-				this.setProperty("values", [])
-				for (let i = 0; i < 8; i++) {
-					this.properties["values"].push([0, 0, 0, 0])
-				}
+				this.setProperty("values", [[0, 0, 0, 0]])
+
+				this.selected = false
 
                 this.serialize_widgets = true;
 
@@ -292,7 +329,7 @@ app.registerExtension({
 						node.widgets[6].value = values[v][2]
 						node.widgets[7].value = values[v][3]
 					},
-					{ step: 10, max: 7 }
+					{ step: 10, max: 0 }
 
 				)
 				
@@ -301,8 +338,92 @@ app.registerExtension({
 				CUSTOM_INT(this, "width", 0, function (v, _, node) {transformFunc(this, v, node, 2)})
 				CUSTOM_INT(this, "height", 0, function (v, _, node) {transformFunc(this, v, node, 3)})
 
+				this.removeNodeInputs = function (indexesToRemove) {
+					indexesToRemove.sort((a, b) => b - a);
+				
+					for (let i of indexesToRemove) {
+						if (i === 0) { continue }
+						this.removeInput(i)
+						this.properties.values.splice(i, 1)
+					}
+				
+					const inputLenght = this.inputs.length-1
+				
+					this.widgets[3].options.max = inputLenght
+					if (this.widgets[3].value > inputLenght) {
+						this.widgets[3].value = inputLenght
+					}
+				
+					this.onResize(this.size)
+				}
+
+				this.getExtraMenuOptions = function(_, options) {
+					options.unshift(
+						{
+							content: "add input",
+							callback: () => {
+								this.properties["values"].push([0, 0, 0, 0])
+
+								
+								this.addInput("conditioning", "CONDITIONING")
+
+								this.widgets[3].options.max = this.inputs.length-1
+								
+								this.onResize(this.size)
+							},
+						},
+						// {
+						// 	content: "remove input",
+						// 	callback: () => { this.removeNodeInputs([this.inputs.length-1]) },
+						// },
+						{
+							content: "remove currently selected input",
+							callback: () => { this.removeNodeInputs([this.widgets[3].value]) },
+						},
+						{
+							content: "remove all unconnected inputs",
+							callback: () => {
+								let indexesToRemove = []
+
+								for (let i = 1; i < this.inputs.length; i++) {
+									if (!this.inputs[i].link) {
+										indexesToRemove.push(i)
+									}
+								}
+
+								if (indexesToRemove.length) {
+									this.removeNodeInputs(indexesToRemove)
+								}
+								
+							},
+						}
+					);
+				}
+
+				this.onRemoved = function () {
+					// When removing this node we need to remove the input from the DOM
+					for (let y in this.widgets) {
+						if (this.widgets[y].canvas) {
+							this.widgets[y].canvas.remove();
+						}
+					}
+				};
+			
+				this.onSelected = function () {
+					this.selected = true
+				}
+				this.onDeselected = function () {
+					this.selected = false
+				}
+
 				return r;
 			};
 		}
 	},
+	loadedGraphNode(node, _) {
+		if (node.type === "MultiAreaConditioning") {
+			node.widgets[3].options["max"] = node.properties["values"].length-1
+		}
+	},
+	
 });

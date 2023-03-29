@@ -1,5 +1,7 @@
 # Made by Davemane42
 
+import torch
+
 class MultiAreaConditioning:
     def __init__(self) -> None:
         pass
@@ -8,40 +10,31 @@ class MultiAreaConditioning:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "conditioning1": ("CONDITIONING", ),
-                "conditioning2": ("CONDITIONING", ),
-                "conditioning3": ("CONDITIONING", ),
-                "conditioning4": ("CONDITIONING", ),
-                "conditioning5": ("CONDITIONING", ),
-                "conditioning6": ("CONDITIONING", ),
-                "conditioning7": ("CONDITIONING", ),
-                "conditioning8": ("CONDITIONING", ),
+                "conditioning": ("CONDITIONING", )
             },
-            "hidden": {"extra_pnginfo": "EXTRA_PNGINFO"},
+            "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"},
         }
 
     RETURN_TYPES = ("CONDITIONING", )
     FUNCTION = "doStuff"
     CATEGORY = "Davemane42"
 
-    def doStuff(self, conditioning1, conditioning2, conditioning3, conditioning4, conditioning5, conditioning6, conditioning7, conditioning8, extra_pnginfo=None):
+    def doStuff(self, extra_pnginfo, unique_id, **kwargs):
 
         c = []
-        clist = [conditioning1, conditioning2, conditioning3, conditioning4, conditioning5, conditioning6, conditioning7, conditioning8]
         values = []
         imageWidth = 512
         imageHeight = 512
 
-        # Really jank, only work if 1 node exist
-        # cant find the node unique_id in python
-        if extra_pnginfo:
-            for node in extra_pnginfo["workflow"]["nodes"]:
-                if node["type"] == "MultiAreaConditioning":
-                    values = node["properties"]["values"]
-                    imageWidth = node["properties"]["width"]
-                    imageHeight = node["properties"]["height"]
-                    
-        for k, conditioning in enumerate(clist):
+        for node in extra_pnginfo["workflow"]["nodes"]:
+            if node["id"] == int(unique_id):
+                values = node["properties"]["values"]
+                imageWidth = node["properties"]["width"]
+                imageHeight = node["properties"]["height"]
+                break
+        k = 0
+        for arg in kwargs:
+            if not torch.is_tensor(kwargs[arg][0][0]): continue;
             
             x, y = values[k][0], values[k][1]
             width, height = values[k][2], values[k][3]
@@ -54,7 +47,7 @@ class MultiAreaConditioning:
 
             if width == 0 or height == 0: continue;
 
-            for t in conditioning:
+            for t in kwargs[arg]:
                 n = [t[0], t[1].copy()]
                 n[1]['area'] = (height // 8, width // 8, y // 8, x // 8)
                 n[1]['strength'] = 1.0
@@ -62,6 +55,9 @@ class MultiAreaConditioning:
                 n[1]['max_sigma'] = 99.0
                 
                 c.append(n)
+            
+            k += 1
+            if k > len(values): break;
         
         return (c, )
 

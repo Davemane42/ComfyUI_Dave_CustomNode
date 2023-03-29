@@ -1,9 +1,12 @@
 # Davemane42's Custom Node for [ComfyUI](https://github.com/comfyanonymous/ComfyUI)  
 
-# MultiAreaConditioning
+# MultiAreaConditioning 2.0  
+### require ComfyUI updated after 28th March 2023  
 
-Let you visualize the default ConditioningSetArea node  
-If width/height are left at 0, nothing will be outputed from that area  
+Let you visualize the ConditioningSetArea node for better control  
+Right click on the node to add/remove inputs  
+Display what node is associated with current input selected  
+
 <img src="./images/MultiAreaConditioning_node.png" width="500px">
 
 this also come with a <strong>ConditioningUpscale</strong> node.  

@@ -1,4 +1,5 @@
 import { app } from "../scripts/app.js";
+//import {convertToInput, convertToWidget} from "/extensions/core/widgetInputs.js";
 
 function CUSTOM_INT(node, inputName, val, func, config = {}) {
 	return {
@@ -6,7 +7,7 @@ function CUSTOM_INT(node, inputName, val, func, config = {}) {
 			"number",
 			inputName,
 			val,
-			func,
+			func, 
 			Object.assign({}, { min: 0, max: 2048, step: 640, precision: 0 }, config)
 		),
 	};
@@ -35,7 +36,7 @@ function addCanvas(node, app) {
 	
 		const MIN_SIZE = 200;
 	
-		let y = LiteGraph.NODE_WIDGET_HEIGHT * node.inputs.length + 5;
+		let y = LiteGraph.NODE_WIDGET_HEIGHT * Math.max(node.inputs.length, node.outputs.length) + 5;
 		let freeSpace = size[1] - y;
 	
 		// Compute the height of all non customtext widgets
@@ -147,6 +148,9 @@ function addCanvas(node, app) {
 				let w = v[2]*backgroudWidth/width
 				let h = v[3]*backgroundHeight/height
 
+				if (x > backgroudWidth) { x = backgroudWidth}
+				if (y > backgroundHeight) { y = backgroundHeight}
+
 				if (x+w > backgroudWidth) {
 					w = Math.max(0, backgroudWidth-x)
 				}
@@ -229,13 +233,16 @@ function addCanvas(node, app) {
 				const connectedNode = recursiveLinkUpstream(node, index)
 				if (connectedNode) {
 
-					const [x, y] = connectedNode.pos
-					const [w, h] = connectedNode.size
-					const offset = 5
+					if (connectedNode.type != node.type) {
+						const [x, y] = connectedNode.pos
+						const [w, h] = connectedNode.size
+						const offset = 5
+						const titleHeight = LiteGraph.NODE_TITLE_HEIGHT * (connectedNode.type === "Reroute"  ? 0 : 1)
 
-					ctx.strokeStyle = selectedColor
-					ctx.lineWidth = 5;
-					ctx.strokeRect(x-offset-node.pos[0], y-offset-node.pos[1]-LiteGraph.NODE_TITLE_HEIGHT, w+offset*2, h+offset*2+LiteGraph.NODE_TITLE_HEIGHT)
+						ctx.strokeStyle = selectedColor
+						ctx.lineWidth = 5;
+						ctx.strokeRect(x-offset-node.pos[0], y-offset-node.pos[1]-titleHeight, w+offset*2, h+offset*2+titleHeight)
+					}
 				}
 			}
 			ctx.lineWidth = 1;
@@ -306,10 +313,10 @@ app.registerExtension({
 
 				this.setProperty("width", 512)
 				this.setProperty("height", 512)
-
-				this.setProperty("values", [[0, 0, 0, 0]])
+				this.setProperty("values", [[0, 0, 0, 0], [0, 0, 0, 0]])
 
 				this.selected = false
+				this.converted = false
 
                 this.serialize_widgets = true;
 
@@ -331,7 +338,7 @@ app.registerExtension({
 						node.widgets[6].value = values[v][2]
 						node.widgets[7].value = values[v][3]
 					},
-					{ step: 10, max: 0 }
+					{ step: 10, max: 1 }
 
 				)
 				
@@ -344,7 +351,7 @@ app.registerExtension({
 					indexesToRemove.sort((a, b) => b - a);
 				
 					for (let i of indexesToRemove) {
-						if (i === 0) { continue }
+						if (i <= 1) { continue } // if not first 2
 						this.removeInput(i)
 						this.properties.values.splice(i, 1)
 					}
@@ -379,10 +386,6 @@ app.registerExtension({
 								this.onResize(this.size)
 							},
 						},
-						// {
-						// 	content: "remove input",
-						// 	callback: () => { this.removeNodeInputs([this.inputs.length-1]) },
-						// },
 						{
 							content: "remove currently selected input",
 							callback: () => { this.removeNodeInputs([this.widgets[3].value]) },
@@ -392,7 +395,7 @@ app.registerExtension({
 							callback: () => {
 								let indexesToRemove = []
 
-								for (let i = 1; i < this.inputs.length; i++) {
+								for (let i = 2; i < this.inputs.length; i++) {
 									if (!this.inputs[i].link) {
 										indexesToRemove.push(i)
 									}
@@ -403,7 +406,43 @@ app.registerExtension({
 								}
 								
 							},
-						}
+						},
+						// not working
+						// {
+						// 	content: `${(this.converted ? "remove " : "add" )} size resizing`,
+						// 	callback: () => {
+						// 		this.converted = !this.converted
+						// 		if (this.converted) {
+
+						// 			console.log("before", this.inputs)
+
+						// 			for (const widgetName of ["testHeight", "testWidth"]) {
+						// 				CUSTOM_INT(
+						// 					this,
+						// 					widgetName,
+						// 					512,
+						// 					function (v, _, node) {
+						// 						console.log(v, node)
+
+						// 						const s = this.options.step / 10;
+						// 						this.value = Math.round(v / s) * s;
+						// 					},
+						// 					{ "min": 64,"max": 8192,"step": 64,"precision": 0 },
+						// 				)
+						// 				convertToInput(this, this.widgets.at(-1), ["INT", this.widgets.at(-1).options])
+
+						// 				this.inputs.unshift(this.inputs.pop())
+						// 			}
+
+						// 			console.log("after", this.inputs)
+
+						// 		} else {
+						// 			this.removeInput(0)
+						// 			this.removeInput(0)
+						// 		}
+						// 		this.onResize(this.size)
+						// 	},
+						// },
 					);
 				}
 

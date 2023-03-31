@@ -1,7 +1,15 @@
 # Davemane42's Custom Node for [ComfyUI](https://github.com/comfyanonymous/ComfyUI)  
 
-# MultiAreaConditioning 2.0  
+# MultiAreaConditioning 2.2  
+
+## Installation:  
 ### require ComfyUI updated after 28th March 2023  
+
+[MultiAreaConditioning.js](MultiAreaConditioning/MultiAreaConditioning.js) -> ComfyUI\web\extensions  
+[MultiAreaConditioning.py](MultiAreaConditioning/MultiAreaConditioning.py) -> ComfyUI\custom_nodes  
+
+no way of doing it automaticly as of 30/03/23 (working on it)  
+#
 
 Let you visualize the ConditioningSetArea node for better control  
 Right click on the node to add/remove inputs  

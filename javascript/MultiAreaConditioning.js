@@ -27,12 +27,12 @@ function addMultiAreaConditioningCanvas(node, app) {
 
 			const widgetHeight = node.canvasHeight
             const values = node.properties["values"]
-			const width = node.properties["width"]
-			const height = node.properties["height"]
+			const width = Math.round(node.properties["width"])
+			const height = Math.round(node.properties["height"])
 
 			const scale = Math.min((widgetWidth-margin*2)/width, (widgetHeight-margin*2)/height)
 
-			const index = node.widgets[node.index].value
+			const index = Math.round(node.widgets[node.index].value)
 
 			Object.assign(this.canvas.style, {
 				left: `${t.e}px`,
@@ -118,6 +118,7 @@ function addMultiAreaConditioningCanvas(node, app) {
 			ctx.closePath();
 
 			// Draw currently selected zone
+			console.log(index)
 			let [x, y, w, h] = getDrawArea(values[index])
 
 			w = Math.max(32*scale, w)

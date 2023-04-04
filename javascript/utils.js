@@ -173,5 +173,3 @@ export function computeCanvasSize(node, size) {
 
 	node.canvasHeight = freeSpace;
 }
-
-//export {CUSTOM_INT, recursiveLinkUpstream, transformFunc, swapInputs, renameNodeInputs, removeNodeInputs, getDrawColor, computeCanvasSize}

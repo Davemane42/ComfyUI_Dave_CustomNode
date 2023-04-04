@@ -1,10 +1,15 @@
 # Davemane42's Custom Node for [ComfyUI](https://github.com/comfyanonymous/ComfyUI)  
 
-ComfyUI cant load .js file from the custom_nodes folder.  
-youll have to <strong>copy/paste/drag the .web folder</strong> in the root ComfyUI folder
+## Instalation:
+
+- Navigate to the `/ComfyUI/custom_nodes/` folder
+- `git clone git clone https://github.com/Davemane42/ComfyUI_Dave_CustomNode`
+- Start ComfyUI
+  - all require file should be downloaded/copied from there.
+  - no need to manually copy/paste .js files anymore
 
 ___
-# MultiAreaConditioning 2.3  
+# MultiAreaConditioning 2.4  
 
 Let you visualize the ConditioningSetArea node for better control  
 <details close="close">
@@ -29,7 +34,7 @@ useseful for hires fix workflow
 </details>
   
 ___
-# MultiLatentComposite 1.0  
+# MultiLatentComposite 1.1  
 
 Let you visualize the MultiLatentComposite node for better control  
 <details close="close">
@@ -52,7 +57,7 @@ Display what node is associated with current input selected
 ___
 # Known issues
 
-## MultiAreaComposition 2.3
-- strenght works but i havent experimented with it 
-## MultiLatentComposite 1.0
+## MultiAreaComposition 2.4
+- 
+## MultiLatentComposite 1.1
 - no check for out of bound layers

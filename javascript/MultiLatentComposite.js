@@ -95,7 +95,7 @@ function addMultiLatentCompositeCanvas(node, app) {
 			const border = 2
 
             const values = node.properties["values"]
-			const index = node.widgets[node.index].value
+			const index = Math.round(node.widgets[node.index].value)
 
 			let width = null
 			let height = null

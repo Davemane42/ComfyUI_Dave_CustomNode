@@ -5,6 +5,7 @@ import importlib.util
 import sys
 import filecmp
 import shutil
+import platform
 
 import __main__
 
@@ -13,6 +14,9 @@ python = sys.executable
 
 extentions_folder = os.path.join(os.path.dirname(os.path.realpath(__main__.__file__)), "web\extensions\Davemane42")
 javascript_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "javascript")
+
+if platform.system() == "Linux":
+    extentions_folder = extentions_folder.replace("\\", "/")
 
 if not os.path.exists(extentions_folder):
     print('Making the "web\extensions\Davemane42" folder')

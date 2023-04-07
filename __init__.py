@@ -11,7 +11,8 @@ import __main__
 python = sys.executable
 
 
-extentions_folder = os.path.join(os.path.dirname(os.path.realpath(__main__.__file__)), "web\extensions\Davemane42")
+extentions_folder = os.path.join(os.path.dirname(os.path.realpath(__main__.__file__)),
+                                 "web" + os.sep + "extensions" + os.sep "Davemane42")
 javascript_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "javascript")
 
 if not os.path.exists(extentions_folder):
